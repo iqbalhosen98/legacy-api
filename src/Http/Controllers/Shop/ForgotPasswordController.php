@@ -1,0 +1,43 @@
+<?php
+
+namespace Mrpath\API\Http\Controllers\Shop;
+
+use Illuminate\Foundation\Auth\SendsPasswordResetEmails;
+use Illuminate\Support\Facades\Password;
+use Mrpath\Customer\Http\Requests\CustomerForgotPasswordRequest;
+
+class ForgotPasswordController extends Controller
+{
+    use SendsPasswordResetEmails;
+
+    /**
+     * Store a newly created resource in storage.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function store(CustomerForgotPasswordRequest $request)
+    {
+        $request->validated();
+
+        $response = $this->broker()->sendResetLink($request->only(['email']));
+
+        return $response == Password::RESET_LINK_SENT
+            ? response()->json([
+                'message' => trans($response),
+            ])
+            : response()->json([
+                'error' => 'Warning: You have requested password reset recently, please check your email.',
+                // 'error' => trans("admin::app.users.forget-password.{$response}"),
+            ]);
+    }
+
+    /**
+     * Get the broker to be used during password reset.
+     *
+     * @return \Illuminate\Contracts\Auth\PasswordBroker
+     */
+    public function broker()
+    {
+        return Password::broker('customers');
+    }
+}
